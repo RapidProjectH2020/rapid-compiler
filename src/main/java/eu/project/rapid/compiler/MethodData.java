@@ -1,12 +1,16 @@
 package eu.project.rapid.compiler;
 
-public class MethodData {
-	public String returnType;
-	public String methodName;
-	public String parametros;
-	public String tipoParametros;
-	public String nameParametros;
-	public String code;
-	public String modifiers;
+class MethodData {
 
+	MethodData() {
+		parameters = new StringBuilder();
+	}
+
+	String returnType;
+	String methodName;
+	StringBuilder parameters;
+	String parametersTypes;
+	String parametersNames;
+	String code;
+	String modifiers;
 }

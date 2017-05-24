@@ -5,80 +5,66 @@ import org.antlr.stringtemplate.StringTemplateGroup;
 import org.antlr.stringtemplate.language.DefaultTemplateLexer;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.LinkedList;
+import java.util.List;
 
 class CodeGenerator {
-	/**
-	 * Remoteable methods data from the parser
-	 */
-	private LinkedList<MethodData> remoteableMethods;
+    /**
+     * Remoteable methods data from the parser
+     */
+    private List<MethodData> remoteableMethods;
 
-	CodeGenerator() {
-		remoteableMethods = new LinkedList<>();
-	}
+    CodeGenerator() {
+        remoteableMethods = new LinkedList<>();
+    }
 
-	void generate(String input, String output) {
-		CodeParser<Object> parser = new CodeParser<>();
-		remoteableMethods = parser.parse(input);
+    /**
+     * @param input The filename of the input file
+     */
+    String generateRemoteMethods(Path input) {
+        CodeParser<Object> parser = new CodeParser<>();
 
-		String originalCode = parser.source.toString();
+        System.out.println("Working with class: " + input);
 
-		StringTemplate remoteCodeTemplate = new StringTemplate(originalCode
-				.substring(0, originalCode.lastIndexOf("}") - 1)
-				+ "\n"
-				+ "$remoteableCode$\n"
-				+ originalCode.substring(originalCode.lastIndexOf("}")));
+        remoteableMethods = parser.parse(input);
 
-		InputStream in = getClass()
-				.getResourceAsStream("/resource/template.st");
+        String originalCode = parser.source.toString();
 
-		InputStreamReader templateReader = new InputStreamReader(in);
-		StringTemplateGroup group = new StringTemplateGroup(templateReader,
-				DefaultTemplateLexer.class);
+        StringTemplate remoteCodeTemplate = new StringTemplate(originalCode
+                .substring(0, originalCode.lastIndexOf("}") - 1)
+                + "\n"
+                + "$remoteableCode$\n"
+                + originalCode.substring(originalCode.lastIndexOf("}")));
 
-		try {
-			StringBuilder remoteCode = new StringBuilder();
+        InputStream in = getClass().getClassLoader().getResourceAsStream("template.st");
+        InputStreamReader templateReader = new InputStreamReader(in);
+        StringTemplateGroup group = new StringTemplateGroup(templateReader, DefaultTemplateLexer.class);
 
-			for (MethodData method : remoteableMethods) {
-				StringTemplate remoteMethodTemplate = group
-						.getInstanceOf("methods");
+        StringBuilder remoteCode = new StringBuilder();
 
-				remoteMethodTemplate
-						.setAttribute("modifiers", method.modifiers);
-				remoteMethodTemplate.setAttribute("returnType",
-						method.returnType);
-				remoteMethodTemplate.setAttribute("methodName",
-						method.methodName);
-				remoteMethodTemplate.setAttribute("parameters",
-						method.parametros);
-				remoteMethodTemplate.setAttribute("parameterTypes",
-						method.tipoParametros);
-				remoteMethodTemplate.setAttribute("parameterNames",
-						method.nameParametros);
-				remoteMethodTemplate.setAttribute("originalCode", method.code);
+        for (MethodData method : remoteableMethods) {
+            StringTemplate remoteMethodTemplate = group.getInstanceOf("methods");
 
-				remoteCode.append(remoteMethodTemplate);
-			}
+            remoteMethodTemplate.setAttribute("modifiers", method.modifiers);
+            remoteMethodTemplate.setAttribute("returnType", method.returnType);
+            remoteMethodTemplate.setAttribute("methodName", method.methodName);
+            remoteMethodTemplate.setAttribute("parameters", method.parameters);
+            remoteMethodTemplate.setAttribute("parameterTypes", method.parametersTypes);
+            remoteMethodTemplate.setAttribute("parameterNames", method.parametersNames);
+            remoteMethodTemplate.setAttribute("originalCode", method.code);
+            remoteCode.append(remoteMethodTemplate);
+        }
 
-			BufferedWriter out;
-			if (output != null) {
-				FileWriter generatedCode = new FileWriter(output);
-				out = new BufferedWriter(generatedCode);
-			} else {
-				out = new BufferedWriter(new OutputStreamWriter(System.out));
-			}
+        remoteCodeTemplate.setAttribute("remoteableCode", remoteCode.toString());
 
-			remoteCodeTemplate.setAttribute("remoteableCode", remoteCode.toString());
-			out.write(remoteCodeTemplate.toString());
-			out.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        return remoteCodeTemplate.toString();
+    }
 
-	} // end porLineas method
+    /**
+     * @param input The class containing the methods with QoS annotations.
+     */
+    void handleQosParams(Path input) {
 
+    }
 }

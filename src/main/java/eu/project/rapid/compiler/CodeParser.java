@@ -1,16 +1,18 @@
 package eu.project.rapid.compiler;
 
-import japa.parser.JavaParser;
-import japa.parser.ParseException;
-import japa.parser.ast.CompilationUnit;
-import japa.parser.ast.body.MethodDeclaration;
-import japa.parser.ast.body.ModifierSet;
-import japa.parser.ast.body.Parameter;
-import japa.parser.ast.expr.AnnotationExpr;
-import japa.parser.ast.visitor.VoidVisitorAdapter;
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,16 +24,16 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
         methods = new LinkedList<>();
     }
 
-    LinkedList<MethodData> parse(String name) {
+    LinkedList<MethodData> parse(Path input) {
         CompilationUnit cu;
 
-        try (FileInputStream in = new FileInputStream(name)) {
+        try (FileInputStream in = new FileInputStream(input.toString())) {
             // parse the file
             cu = JavaParser.parse(in);
             // visit and print the methods names
             source = cu;
             visit(source, null);
-        } catch (ParseException | IOException e) {
+        } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -39,15 +41,15 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
         return methods;
     }
 
-    @Override
     /**
      * here you can access the attributes of the method.
      * this method will be called for all methods in this
      * CompilationUnit, including inner class methods
      */
+    @Override
     public void visit(MethodDeclaration n, Object arg) {
-        // Annotations of the method
 
+        // Annotations of the method
         List<AnnotationExpr> annotations = n.getAnnotations();
         if (annotations != null) {
             for (AnnotationExpr annotation : annotations) {
@@ -56,16 +58,16 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
                     MethodData currentMethod = new MethodData();
 
                     // methodName
-                    currentMethod.methodName = n.getName();
+                    currentMethod.methodName = n.getName().asString();
 
                     // returnType
-                    japa.parser.ast.type.Type mType = n.getType();
+                    Type mType = n.getType();
                     currentMethod.returnType = mType.toString();
 
                     // modifiers
                     currentMethod.modifiers = getModifiers(n.getModifiers());
 
-                    // parametros
+                    // parameters
                     List<Parameter> parameters = n.getParameters();
                     if (parameters != null) {
                         StringBuilder auxTP = new StringBuilder();
@@ -74,11 +76,10 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
 
                             if (auxTP.length() > 1) {
                                 auxTP.append(",").append(parameter.getType().toString()).append(".class");
-                                currentMethod.parametros += ", " + parameter.toString();
+                                currentMethod.parameters.append(", ").append(parameter.toString());
                             } else {
-                                auxTP = new StringBuilder(parameter.getType().toString()
-                                        + ".class");
-                                currentMethod.parametros = parameter.toString();
+                                auxTP = new StringBuilder(parameter.getType().toString() + ".class");
+                                currentMethod.parameters.append(parameter.toString());
                             }
                             String aux = parameter.toString();
                             aux = aux.substring(aux.indexOf(" "));
@@ -89,15 +90,12 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
                                 auxNP = new StringBuilder(aux);
 
                         }
-                        currentMethod.tipoParametros = auxTP.toString();
-                        currentMethod.nameParametros = auxNP.toString();
+                        currentMethod.parametersTypes = auxTP.toString();
+                        currentMethod.parametersNames = auxNP.toString();
                     } else {
-                        currentMethod.parametros = "";
-
-                        currentMethod.tipoParametros = "null";
-
-                        currentMethod.nameParametros = "null";
-
+                        currentMethod.parameters.append("");
+                        currentMethod.parametersTypes = "null";
+                        currentMethod.parametersNames = "null";
                     }
 
                     // code
@@ -105,20 +103,24 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
 
                     // change the method name to local
                     n.setName("local" + n.getName());
-
                     methods.add(currentMethod);
                 }
             }
         }
-
     }
 
-    private String getModifiers(int mod) {
-        String modifiers = "";
+    private String getModifiers(EnumSet<Modifier> mod) {
+        StringBuilder modifiers = new StringBuilder();
+
+        for (Modifier m : mod) {
+            modifiers.append(m.asString()).append(" ");
+        }
+
+        /*
         if (ModifierSet.isPrivate(mod)) {
             modifiers += "private ";
-
         }
+
         if (ModifierSet.isProtected(mod)) {
             modifiers += "protected ";
 
@@ -158,7 +160,9 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
         if (ModifierSet.isVolatile(mod)) {
             modifiers += "volatile ";
         }
-        return modifiers;
+        */
+
+        return modifiers.toString();
     }
 
 }
