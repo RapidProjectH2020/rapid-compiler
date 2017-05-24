@@ -17,20 +17,20 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class CodeParser<A> extends VoidVisitorAdapter<A> {
-    private LinkedList<MethodData> methods;
+    private List<MethodData> remoteableMethods;
     CompilationUnit source;
 
     CodeParser() {
-        methods = new LinkedList<>();
+        remoteableMethods = new LinkedList<>();
     }
 
-    LinkedList<MethodData> parse(Path input) {
+    List<MethodData> parse(Path input) {
         CompilationUnit cu;
 
         try (FileInputStream in = new FileInputStream(input.toString())) {
             // parse the file
             cu = JavaParser.parse(in);
-            // visit and print the methods names
+            // visit and print the remoteableMethods names
             source = cu;
             visit(source, null);
         } catch (IOException e) {
@@ -38,13 +38,13 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
             e.printStackTrace();
         }
 
-        return methods;
+        return remoteableMethods;
     }
 
     /**
-     * here you can access the attributes of the method.
-     * this method will be called for all methods in this
-     * CompilationUnit, including inner class methods
+     * Here you can access the attributes of the method.
+     * this method will be called for all remoteableMethods in this
+     * CompilationUnit, including inner class remoteableMethods
      */
     @Override
     public void visit(MethodDeclaration n, Object arg) {
@@ -53,7 +53,7 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
         List<AnnotationExpr> annotations = n.getAnnotations();
         if (annotations != null) {
             for (AnnotationExpr annotation : annotations) {
-                // Only process the methods annotated with @Remote
+                // Only process the remoteableMethods annotated with @Remote
                 if (annotation.getName().toString().equals("Remote")) {
                     MethodData currentMethod = new MethodData();
 
@@ -103,7 +103,7 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
 
                     // change the method name to local
                     n.setName("local" + n.getName());
-                    methods.add(currentMethod);
+                    remoteableMethods.add(currentMethod);
                 }
             }
         }
