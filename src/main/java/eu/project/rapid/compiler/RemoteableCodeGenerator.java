@@ -28,7 +28,9 @@ public class RemoteableCodeGenerator {
 
                         // Parse the file and create the new code with offloading possibilities
                         String newCode = generator.generateRemoteMethods(path);
-                        backupAndModifyFile(path, newCode);
+                        if (newCode != null) {
+                            backupAndModifyFile(path, newCode);
+                        }
                     });
         } catch (IOException e) {
             e.printStackTrace();

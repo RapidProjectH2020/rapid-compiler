@@ -20,7 +20,9 @@ class CodeGenerator {
     }
 
     /**
-     * @param input The filename of the input file
+     * @param input The filename of the input class file.
+     * @return The new source code of the class if there was at least one <code>Remote</code> method
+     * or <code>null</code> otherwise.
      */
     String generateRemoteMethods(Path input) {
         CodeParser<Object> parser = new CodeParser<>();
@@ -28,6 +30,9 @@ class CodeGenerator {
         System.out.println("Working with class: " + input);
 
         remoteableMethods = parser.parse(input);
+        if (remoteableMethods == null || remoteableMethods.size() == 0) {
+            return null;
+        }
 
         String originalCode = parser.source.toString();
 
