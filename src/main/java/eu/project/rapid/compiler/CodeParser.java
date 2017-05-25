@@ -52,10 +52,10 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
         // Annotations of the method
         List<AnnotationExpr> annotations = n.getAnnotations();
         if (annotations != null) {
+            MethodData currentMethod = new MethodData();
             for (AnnotationExpr annotation : annotations) {
-                // Only process the remoteableMethods annotated with @Remote
+                // Only process the remoteableMethods annotated with @Remote and @QoS
                 if (annotation.getName().toString().equals("Remote")) {
-                    MethodData currentMethod = new MethodData();
 
                     // methodName
                     currentMethod.methodName = n.getName().asString();
@@ -103,7 +103,11 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
 
                     // change the method name to local
                     n.setName("local" + n.getName());
+
+                    currentMethod.addRemoteAnnotationElements(annotation);
                     remoteableMethods.add(currentMethod);
+                } else if (annotation.getName().toString().equals("QoS")) {
+                    currentMethod.addQodAnnotationElements(annotation);
                 }
             }
         }
@@ -116,53 +120,6 @@ public class CodeParser<A> extends VoidVisitorAdapter<A> {
             modifiers.append(m.asString()).append(" ");
         }
 
-        /*
-        if (ModifierSet.isPrivate(mod)) {
-            modifiers += "private ";
-        }
-
-        if (ModifierSet.isProtected(mod)) {
-            modifiers += "protected ";
-
-        }
-        if (ModifierSet.isPublic(mod)) {
-            modifiers += "public ";
-
-        }
-        if (ModifierSet.isAbstract(mod)) {
-            modifiers += "abstract ";
-
-        }
-        if (ModifierSet.isStatic(mod)) {
-            modifiers += "static ";
-
-        }
-        if (ModifierSet.isFinal(mod)) {
-            modifiers += "final ";
-
-        }
-        if (ModifierSet.isNative(mod)) {
-            modifiers += "native ";
-
-        }
-        if (ModifierSet.isStrictfp(mod)) {
-            modifiers += "strictfp ";
-
-        }
-        if (ModifierSet.isSynchronized(mod)) {
-            modifiers += "synchronized ";
-
-        }
-        if (ModifierSet.isTransient(mod)) {
-            modifiers += "transient ";
-
-        }
-        if (ModifierSet.isVolatile(mod)) {
-            modifiers += "volatile ";
-        }
-        */
-
         return modifiers.toString();
     }
-
 }

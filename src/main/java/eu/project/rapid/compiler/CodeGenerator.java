@@ -8,6 +8,7 @@ import java.io.*;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 class CodeGenerator {
     /**
@@ -24,7 +25,7 @@ class CodeGenerator {
      * @return The new source code of the class if there was at least one <code>Remote</code> method
      * or <code>null</code> otherwise.
      */
-    String generateRemoteMethods(Path input) {
+    String generateRemoteMethods(Path input, Map<String, List<MethodData>> classesMap) {
         CodeParser<Object> parser = new CodeParser<>();
 
         System.out.println("Working with class: " + input);
@@ -33,6 +34,9 @@ class CodeGenerator {
         if (remoteableMethods == null || remoteableMethods.size() == 0) {
             return null;
         }
+
+        // Put the remoteable methods' data in the map
+        classesMap.put(input.toString(), remoteableMethods);
 
         String originalCode = parser.source.toString();
 
@@ -64,12 +68,5 @@ class CodeGenerator {
         remoteCodeTemplate.setAttribute("remoteableCode", remoteCode.toString());
 
         return remoteCodeTemplate.toString();
-    }
-
-    /**
-     * @param input The class containing the methods with QoS annotations.
-     */
-    void handleQosParams(Path input) {
-
     }
 }
