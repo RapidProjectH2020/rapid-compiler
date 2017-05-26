@@ -25,7 +25,7 @@ class CodeGenerator {
      * @return The new source code of the class if there was at least one <code>Remote</code> method
      * or <code>null</code> otherwise.
      */
-    String generateRemoteMethods(Path input, Map<String, List<MethodData>> classesMap) {
+    String generateRemoteCode(Path input, Map<String, List<MethodData>> classesMap) {
         CodeParser<Object> parser = new CodeParser<>();
 
         System.out.println("Working with class: " + input);

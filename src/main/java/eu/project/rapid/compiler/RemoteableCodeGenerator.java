@@ -47,11 +47,8 @@ public class RemoteableCodeGenerator {
         try (Stream<Path> stream = Files.walk(projectFolder)) {
             stream.filter(path -> path.toString().endsWith(".java"))
                     .forEach(path -> {
-                        // Parse the file and extract the QoS parameters
-                        generator.handleQosParams(path);
-
                         // Parse the file and create the new code with offloading possibilities
-                        String newCode = generator.generateRemoteMethods(path, classesMap);
+                        String newCode = generator.generateRemoteCode(path, classesMap);
                         if (newCode != null) {
                             backupAndModifyFile(path, newCode);
                         }
