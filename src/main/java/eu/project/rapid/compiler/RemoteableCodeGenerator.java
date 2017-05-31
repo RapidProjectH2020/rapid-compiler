@@ -17,9 +17,41 @@ import java.util.stream.Stream;
  * class and produces the modified class.
  */
 public class RemoteableCodeGenerator {
+    // Analyze the classes of the given project
+    private CodeGenerator generator;
+    // Data structure to be populated with app and method details for creating the rapid xml file
+    private Map<String, List<MethodData>> classesMap;
 
-    private RemoteableCodeGenerator(String projectFolderName) {
+    private RemoteableCodeGenerator(String projectFolderOrJavaFile) {
+        System.out.println("Processing: " + projectFolderOrJavaFile);
+        Path projectFolderOrJavaFilePath = Paths.get(projectFolderOrJavaFile);
 
+        generator = new CodeGenerator();
+        classesMap = new HashMap<>();
+
+        if (Files.exists(projectFolderOrJavaFilePath)) {
+            if (!Files.isDirectory(projectFolderOrJavaFilePath)) {
+                if (projectFolderOrJavaFile.endsWith(".java")) {
+                    processFile(projectFolderOrJavaFilePath);
+                } else {
+                    System.err.println("Given file is not a Java file: " + projectFolderOrJavaFile);
+                }
+            } else {
+                processFolder(projectFolderOrJavaFilePath);
+            }
+        } else {
+            System.err.println("File or folder does not exist: " + projectFolderOrJavaFile);
+        }
+    }
+
+    private void processFile(Path javaFile) {
+        String newCode = generator.generateRemoteCode(javaFile, classesMap);
+        if (newCode != null) {
+            backupAndModifyFile(javaFile, newCode);
+        }
+    }
+
+    private void processFolder(Path projectFolder) {
         // Create a backup folder where to keep a copy of the given project
         String userHomeFolder = System.getProperty("user.home");
         Path rapidBackupFolder = Paths.get(userHomeFolder, File.separator, ".rapid-compiler-backups");
@@ -29,9 +61,7 @@ public class RemoteableCodeGenerator {
             System.err.println("Could not create rapid backup folder: " + e);
         }
 
-        // Create a backup of the given project
-        System.out.println("The project is " + projectFolderName);
-        Path projectFolder = Paths.get(projectFolderName);
+        // FIXME Create a backup of the given project. Current backup only copies the empty folder.
         try {
             Files.copy(projectFolder,
                     projectFolder.resolveSibling(rapidBackupFolder + File.separator + projectFolder.getFileName()));
@@ -39,20 +69,10 @@ public class RemoteableCodeGenerator {
             System.err.println("Could not backup the project: " + e);
         }
 
-        // Data structure to be populated with app and method details for creating the rapid xml file
-        Map<String, List<MethodData>> classesMap = new HashMap<>();
-
-        // Analyze the classes of the given project
-        CodeGenerator generator = new CodeGenerator();
         try (Stream<Path> stream = Files.walk(projectFolder)) {
+            // Parse the file and create the new code with offloading possibilities
             stream.filter(path -> path.toString().endsWith(".java"))
-                    .forEach(path -> {
-                        // Parse the file and create the new code with offloading possibilities
-                        String newCode = generator.generateRemoteCode(path, classesMap);
-                        if (newCode != null) {
-                            backupAndModifyFile(path, newCode);
-                        }
-                    });
+                    .forEach(this::processFile);
 
             printXmlFile(classesMap);
         } catch (IOException e) {
@@ -131,6 +151,6 @@ public class RemoteableCodeGenerator {
     }
 
     private static void usage() {
-        System.out.println("1st parameter input file, 2nd (optional) - output, otherwise stdout");
+        System.out.println("usage: java -jar rapid-acceleration-compiler.jar <path_of_your_project>");
     }
 }
